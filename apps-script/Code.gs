@@ -1,5 +1,5 @@
 /**
- * Bureau showroom sign-in — entry point
+ * Bureau showroom sign-in - entry point
  *
  * Front end: https://showroom.lab.withbureau.com  (withbureau/showroom-sign-in)
  * The kiosk sends name / company / email and this script:
@@ -124,7 +124,7 @@ function firstName(fullName) {
  *
  * Works whether the script is bound to the sheet (Extensions → Apps Script) or
  * standalone. If it's standalone, put the sheet id in a SHEET_ID Script
- * Property — getActiveSpreadsheet() returns null for standalone scripts, which
+ * Property - getActiveSpreadsheet() returns null for standalone scripts, which
  * would otherwise fail with a confusing "cannot read property of null".
  */
 function getSpreadsheet() {
@@ -212,7 +212,7 @@ function createVisitEvent(visitor) {
   var end = new Date(start.getTime() + CONFIG.VISIT_MINUTES * 60 * 1000);
 
   calendar.createEvent(
-    'Showroom visit — ' + visitor.name + ' (' + visitor.company + ')',
+    'Showroom visit: ' + visitor.name + ' (' + visitor.company + ')',
     start,
     end,
     {

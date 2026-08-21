@@ -1,5 +1,5 @@
 /**
- * Bureau showroom sign-in — HubSpot
+ * Bureau showroom sign-in - HubSpot
  *
  * Follows the Bureau form-worker convention:
  *   - private app token in HUBSPOT_TOKEN (here: Script Properties, not .dev.vars)
@@ -12,7 +12,7 @@
  *   - no lifecyclestage write (nothing in the org writes it; it would silently
  *     drag showroom walk-ins backwards through the funnel)
  *   - no Company object write (no /crm/v3/objects/companies write exists in the
- *     org) — the visitor's employer goes on the contact's `company` property
+ *     org) - the visitor's employer goes on the contact's `company` property
  *   - associations use the /crm/v4 "default" endpoint rather than a hardcoded
  *     associationTypeId, so there is no id to guess wrong
  */
@@ -31,7 +31,7 @@ function hubspotToken() {
 function pushToHubSpot(visitor) {
   var token = hubspotToken();
   if (!token) {
-    console.log('[showroom] HUBSPOT_TOKEN not set — skipping HubSpot push');
+    console.log('[showroom] HUBSPOT_TOKEN not set - skipping HubSpot push');
     return 'skipped (no token)';
   }
 
@@ -97,7 +97,7 @@ function createContact(visitor, token) {
 /**
  * Only fills properties that are currently empty. We never overwrite a name or
  * company that sales has already curated just because someone typed something
- * different into a kiosk — same conservatism as loblaws-request-form, which
+ * different into a kiosk - same conservatism as loblaws-request-form, which
  * deliberately never overwrites an existing contact's phone.
  */
 function fillContactBlanks(contact, visitor, token) {
@@ -128,7 +128,7 @@ function addVisitNote(contactId, visitor, token) {
   var when = Utilities.formatDate(visitor.when, CONFIG.TIMEZONE, 'EEEE d MMMM yyyy, HH:mm');
 
   var body =
-    '<p><strong>Showroom visit &mdash; ' + esc(CONFIG.SHOWROOM_NAME) + '</strong></p>' +
+    '<p><strong>Showroom visit: ' + esc(CONFIG.SHOWROOM_NAME) + '</strong></p>' +
     '<p>Signed in at the showroom kiosk.</p>' +
     '<ul>' +
       '<li>Name: ' + esc(visitor.name) + '</li>' +
@@ -148,7 +148,7 @@ function addVisitNote(contactId, visitor, token) {
     }
   });
 
-  // Default association — avoids hardcoding an associationTypeId. The org has
+  // Default association - avoids hardcoding an associationTypeId. The org has
   // a live 216-vs-228 discrepancy for note->ticket precisely because those get
   // guessed; "default" sidesteps the question.
   hsFetch('/crm/v4/objects/notes/' + note.id + '/associations/default/contacts/' + contactId,

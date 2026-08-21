@@ -1,8 +1,8 @@
 /**
- * Bureau showroom sign-in — configuration
+ * Bureau showroom sign-in - configuration
  *
  * Everything you are likely to want to change lives in this file.
- * Secrets do NOT live here — they go in Script Properties (see SETUP.md),
+ * Secrets do NOT live here - they go in Script Properties (see SETUP.md),
  * because this repo is public.
  */
 
@@ -23,7 +23,7 @@ var CONFIG = {
   //   1. Add it to the owning account as a Gmail "Send mail as" alias
   //      (Gmail → Settings → Accounts → Send mail as → Add another email address)
   //   2. Verify it, then put the address in FROM_ALIAS below.
-  // That is the only change needed — no code edits.
+  // That is the only change needed - no code edits.
   FROM_ALIAS: '',
   FROM_NAME: 'Bureau London Showroom',
   REPLY_TO: 'kathryn@withbureau.com',

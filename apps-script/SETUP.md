@@ -1,4 +1,4 @@
-# Showroom sign-in — backend setup
+# Showroom sign-in - backend setup
 
 The kiosk at [showroom.lab.withbureau.com](https://showroom.lab.withbureau.com)
 is static assets on a Cloudflare Worker (`index.html` + `wrangler.toml` in the
@@ -8,13 +8,13 @@ app, which is the code in this folder.
 Apps Script rather than a Worker on purpose: `MailApp` sends as whichever Google
 account owns the script, so "send from Nathan now, `londonshowroom@` later" is a
 config change, not a domain-verification project. The trade-off is that the
-`.gs` source is not deployed from this repo — see *Deploying* below.
+`.gs` source is not deployed from this repo - see *Deploying* below.
 
 ## What a sign-in does
 
 | Step | Behaviour | Fails safe? |
 |---|---|---|
-| Append row to the sheet | Always | No — this is the one that matters |
+| Append row to the sheet | Always | No - this is the one that matters |
 | Thank-you email to visitor | `SEND_VISITOR_EMAIL`, skipped for repeat visits inside `EMAIL_COOLDOWN_HOURS` | Yes |
 | HubSpot contact + timeline note | `PUSH_TO_HUBSPOT`, needs `HUBSPOT_TOKEN` | Yes |
 | Internal heads-up email | `NOTIFY_INTERNAL` (empty = off) | Yes |
@@ -32,7 +32,7 @@ having a moment.
 | `Code.gs` | `doGet`/`doPost`, sheet write, repeat-visit check, calendar |
 | `Email.gs` | Visitor thank-you (HTML + plain text), internal notification |
 | `HubSpot.gs` | Contact search-then-create, timeline note |
-| `appsscript.json` | Manifest — OAuth scopes, web app access |
+| `appsscript.json` | Manifest - OAuth scopes, web app access |
 
 ## First-time setup
 
@@ -53,14 +53,14 @@ having a moment.
 
    | Property | Value | Required? |
    |---|---|---|
-   | `HUBSPOT_TOKEN` | HubSpot private app token | Optional — omit to skip HubSpot |
+   | `HUBSPOT_TOKEN` | HubSpot private app token | Optional - omit to skip HubSpot |
    | `SHEET_ID` | Sign-in spreadsheet id | Only if the script is **not** bound to the sheet |
 
    Scopes needed on the private app: `crm.objects.contacts.read`,
    `crm.objects.contacts.write`, and notes write. Same token convention as
    `service-request` / `install-complete-form` / `delivery-details`.
 
-   Leave the property off entirely and the HubSpot step just skips — the sheet
+   Leave the property off entirely and the HubSpot step just skips - the sheet
    and the email still work.
 
 5. **Deploy.** Deploy → Manage deployments → edit the existing deployment →
@@ -71,7 +71,7 @@ having a moment.
    Calendar. Approve as the account that should appear as the sender.
 
 7. **Send yourself a test.** In the editor, run `testSignIn()` from
-   `Test.gs` — it pushes a fake visitor through the whole path using your own
+   `Test.gs` - it pushes a fake visitor through the whole path using your own
    address. Check the sheet row, the email, and the HubSpot contact.
 
 ## Switching the sender to londonshowroom@withbureau.com
@@ -85,7 +85,7 @@ routing this through sales. When it exists:
 3. Set `CONFIG.FROM_ALIAS = 'londonshowroom@withbureau.com'`.
 4. Redeploy.
 
-`FROM_NAME` and `REPLY_TO` are separate knobs — `REPLY_TO` currently points at
+`FROM_NAME` and `REPLY_TO` are separate knobs - `REPLY_TO` currently points at
 Kat so visitor replies land with a human, not in a shared inbox nobody watches.
 
 Alternative, if you'd rather the mailbox owned the automation outright: move the
@@ -102,13 +102,13 @@ off again if it's noise, which on a busy day it probably is.
 ## Deliverability
 
 Sending from a real Google account means SPF/DKIM are already right for
-`withbureau.com` — no DNS work. Worth knowing:
+`withbureau.com` - no DNS work. Worth knowing:
 
 - `MailApp` on Workspace is capped around 1,500 recipients/day. A showroom will
   not get near that.
 - The email is transactional (a courtesy note after a visit they opted into by
   signing in), so it doesn't need an unsubscribe footer. If it ever grows
-  marketing content or a campaign link, that changes — it should move into
+  marketing content or a campaign link, that changes - it should move into
   HubSpot marketing email with proper consent tracking at that point.
 - The footer offers deletion on reply, which is the minimum for a UK visitor
   register.
@@ -130,5 +130,5 @@ Sending from a real Google account means SPF/DKIM are already right for
 - The visit shows up as a **timeline note**, which needs no custom property
   created first. If you later want reporting on showroom visits specifically,
   add a custom contact property (a date like `last_showroom_visit`) and patch
-  it in `addVisitNote` — that's the point where Kat's "track showroom activity
+  it in `addVisitNote` - that's the point where Kat's "track showroom activity
   in HubSpot" becomes a filterable list rather than just timeline history.

@@ -1,5 +1,5 @@
 /**
- * Bureau showroom sign-in — outbound email
+ * Bureau showroom sign-in - outbound email
  *
  * Styling matches the existing Bureau customer email (the delivery-details
  * verification-code mail): off-white ground, white card with a 2px steel-blue
@@ -25,7 +25,7 @@ var BRAND = {
 };
 
 function sendVisitorEmail(visitor) {
-  var subject = 'Thanks for visiting ' + CONFIG.SHOWROOM_NAME;
+  var subject = 'Great to have you in the ' + CONFIG.SHOWROOM_NAME + ' showroom!';
 
   var options = {
     name:     CONFIG.FROM_NAME,
@@ -59,9 +59,9 @@ function visitorEmailHtml(visitor) {
 '</head>',
 '<body style="margin:0;padding:0;background:' + BRAND.offWhite + ';">',
 
-// preheader — inbox preview line, hidden in the body
+// preheader: inbox preview line, hidden in the body
 '<div style="display:none;max-height:0;overflow:hidden;opacity:0;">',
-  'Good to have you at the showroom &mdash; we&rsquo;re here if you need anything.',
+  'Hope you got a proper feel for the booths. Anything you need, just reply.',
 '</div>',
 
 '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:' + BRAND.offWhite + ';">',
@@ -81,16 +81,17 @@ function visitorEmailHtml(visitor) {
       '</td>',
     '</tr></table>',
 
-    // headline — sentence case, full stop, per house style
+    // headline
     '<h1 style="margin:26px 0 0;font-family:' + BRAND.display + ';font-weight:700;font-size:42px;line-height:0.95;letter-spacing:-0.02em;color:' + BRAND.steelBlue + ';">',
-      'Thanks for stopping by, ' + esc(name) + '.',
+      'Great to have you in!',
     '</h1>',
 
     // body copy
     '<div style="font-family:' + BRAND.body + ';font-size:16px;line-height:1.5;color:' + BRAND.steelBlue + ';">',
-      '<p style="margin:24px 0 16px;">It was good to have you at the showroom. We hope you got a proper feel for how the booths actually look, sound and sit in a space &mdash; the bit that never quite comes across in a PDF.</p>',
-      '<p style="margin:0 0 16px;">If anything caught your eye, or you&rsquo;d like drawings, finishes or pricing worked up for a specific space, just reply to this email and we&rsquo;ll get it over to you.</p>',
-      '<p style="margin:0;">And if you&rsquo;re ever passing and fancy another look, the door&rsquo;s open.</p>',
+      '<p style="margin:24px 0 16px;">Hey ' + esc(name) + ',</p>',
+      '<p style="margin:0 0 16px;">Great to have you in the showroom today! Hope you got a proper feel for the booths and how they actually work in a real space.</p>',
+      '<p style="margin:0 0 16px;">If anything stood out, or you&rsquo;d like drawings, finishes or pricing put together for a specific space, just reply to this email and we&rsquo;d be more than happy to get that over to you.</p>',
+      '<p style="margin:0;">And if you want to come back for another look, any day / evening works, just let us know.</p>',
     '</div>',
 
     // visit record callout
@@ -107,7 +108,8 @@ function visitorEmailHtml(visitor) {
 
     // sign-off
     '<div style="margin:30px 0 0;padding-top:22px;border-top:1px solid ' + BRAND.warmGrey + ';font-family:' + BRAND.body + ';font-size:16px;line-height:1.5;color:' + BRAND.steelBlue + ';">',
-      'The Bureau team',
+      'Looking forward to hearing from you!',
+      '<div style="margin-top:16px;">Kind Regards,<br>The Bureau Team</div>',
     '</div>',
 
     // data note
@@ -138,29 +140,33 @@ function visitorEmailText(visitor) {
   var visited = Utilities.formatDate(visitor.when, CONFIG.TIMEZONE, 'EEEE d MMMM yyyy');
 
   return [
-    'BUREAU - LONDON SHOWROOM',
+    'BUREAU / LONDON SHOWROOM',
     '',
-    'Thanks for stopping by, ' + name + '.',
+    'Great to have you in!',
     '',
-    'It was good to have you at the showroom. We hope you got a proper feel for',
-    'how the booths actually look, sound and sit in a space - the bit that never',
-    'quite comes across in a PDF.',
+    'Hey ' + name + ',',
     '',
-    'If anything caught your eye, or you\'d like drawings, finishes or pricing',
-    'worked up for a specific space, just reply to this email and we\'ll get it',
-    'over to you.',
+    'Great to have you in the showroom today! Hope you got a proper feel for the',
+    'booths and how they actually work in a real space.',
     '',
-    'And if you\'re ever passing and fancy another look, the door\'s open.',
+    'If anything stood out, or you\'d like drawings, finishes or pricing put',
+    'together for a specific space, just reply to this email and we\'d be more',
+    'than happy to get that over to you.',
+    '',
+    'And if you want to come back for another look, any day / evening works,',
+    'just let us know.',
     '',
     'YOUR VISIT',
     visitor.company,
     visited,
     CONFIG.SHOWROOM_ADDRESS,
     '',
-    'The Bureau team',
+    'Looking forward to hearing from you!',
     '',
-    '--',
-    'Bureau - Furnish a workspace that works',
+    'Kind Regards,',
+    'The Bureau Team',
+    '',
+    'Bureau / Furnish a workspace that works',
     '',
     'You\'re getting this because you signed in at our showroom. We keep a visit',
     'record so we can account for everyone in a fire alarm or evacuation. Reply',
@@ -187,7 +193,7 @@ function sendInternalNotification(visitor, repeat) {
       (repeat
         ? '<p style="margin:16px 0 0;padding:12px 14px;background:rgba(255,253,109,0.18);' +
           'border-left:3px solid ' + BRAND.canary + ';border-radius:8px;color:' + BRAND.midGrey + ';">' +
-          'Repeat visit inside ' + CONFIG.EMAIL_COOLDOWN_HOURS + 'h &mdash; no thank-you email sent.</p>'
+          'Repeat visit inside ' + CONFIG.EMAIL_COOLDOWN_HOURS + 'h, so no thank-you email was sent.</p>'
         : '') +
     '</div>';
 

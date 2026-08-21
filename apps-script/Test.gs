@@ -1,5 +1,5 @@
 /**
- * Bureau showroom sign-in — manual test helpers
+ * Bureau showroom sign-in - manual test helpers
  *
  * Run these from the Apps Script editor (select the function, press Run).
  * They are not called by the web app.
@@ -16,14 +16,14 @@ function whoAmI() {
     try { me = Session.getEffectiveUser().getEmail(); } catch (ignored) {}
   }
   if (!me) {
-    throw new Error('Could not resolve your email address — hardcode it in whoAmI() to test.');
+    throw new Error('Could not resolve your email address - hardcode it in whoAmI() to test.');
   }
   return me;
 }
 
 /**
- * Pushes a fake visitor through the whole path — sheet row, thank-you email,
- * HubSpot contact + note — using your own email address as the visitor.
+ * Pushes a fake visitor through the whole path - sheet row, thank-you email,
+ * HubSpot contact + note - using your own email address as the visitor.
  *
  * Check afterwards: the sheet row, your inbox, and the HubSpot contact.
  * Then delete the test row and the test contact.
@@ -72,12 +72,12 @@ function testHubSpotConnection() {
   var token = hubspotToken();
 
   if (!token) {
-    console.log('HUBSPOT_TOKEN is not set in Script Properties — HubSpot push is disabled.');
+    console.log('HUBSPOT_TOKEN is not set in Script Properties - HubSpot push is disabled.');
     return;
   }
 
   var account = hsFetch('/account-info/v3/details', token, {});
-  console.log('HubSpot OK — portal ' + account.portalId + ' (' + account.timeZone + ')');
+  console.log('HubSpot OK - portal ' + account.portalId + ' (' + account.timeZone + ')');
 
   if (String(account.portalId) !== HS_PORTAL_ID) {
     console.warn('Portal ' + account.portalId + ' is not the expected Bureau portal ' + HS_PORTAL_ID);
@@ -92,7 +92,7 @@ function testRepeatVisitCheck() {
   var lastRow = sheet.getLastRow();
 
   if (lastRow < 2) {
-    console.log('Sheet has no sign-ins yet — nothing to check.');
+    console.log('Sheet has no sign-ins yet - nothing to check.');
     return;
   }
 
