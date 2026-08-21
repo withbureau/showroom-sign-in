@@ -74,6 +74,30 @@ having a moment.
    `Test.gs` - it pushes a fake visitor through the whole path using your own
    address. Check the sheet row, the email, and the HubSpot contact.
 
+## Checking your changes without deploying
+
+Two node scripts under `apps-script/tests/` load the real `.gs` files, so they
+cannot drift from what actually runs. Neither needs a HubSpot token, a Google
+account, or a deployment.
+
+```bash
+node apps-script/tests/hubspot-dryrun.js
+```
+
+Stubs `UrlFetchApp` and asserts the HubSpot request shapes: that a new visitor
+is created with `showroom_visit=Yes`, that an existing contact's curated name
+and company are never overwritten, that a blank contact gets filled, that a 409
+recovers and still records the visit, and that `lifecyclestage` is never
+written. 18 checks.
+
+```bash
+node apps-script/tests/email-preview.js
+```
+
+Captures what `sendVisitorEmail` hands to `MailApp` and writes the rendered HTML
+next to itself so you can open it in a browser. Prints the subject, sender,
+reply-to and the plain-text alternative.
+
 ## Switching the sender to londonshowroom@withbureau.com
 
 Kat's preference (and yours) was a separate showroom address rather than
@@ -127,8 +151,18 @@ Sending from a real Google account means SPF/DKIM are already right for
 - **Associations use the v4 `default` endpoint**, not a hardcoded
   `associationTypeId`. The org already has a live 216-vs-228 disagreement for
   note→ticket because those get guessed; this sidesteps it.
-- The visit shows up as a **timeline note**, which needs no custom property
-  created first. If you later want reporting on showroom visits specifically,
-  add a custom contact property (a date like `last_showroom_visit`) and patch
-  it in `addVisitNote` - that's the point where Kat's "track showroom activity
-  in HubSpot" becomes a filterable list rather than just timeline history.
+- **Two custom contact properties already existed**, and this writes them
+  rather than inventing new ones:
+
+  | Property | Type | Written |
+  |---|---|---|
+  | `showroom_visit` | enumeration, `Yes` / `No` | always set to `Yes` |
+  | `showroom` | date, `yyyy-MM-dd` | always set to the visit date |
+
+  Around 115 contacts already carry these, so Kat's "track showroom activity in
+  HubSpot" is a filter on `showroom_visit = Yes`, not just timeline history.
+  Verified against the live portal (44093193), including the exact `Yes`
+  casing, which matters because HubSpot enumerations are value-exact.
+
+- The visit *also* lands as a **timeline note**, for the detail the two
+  properties can't carry (company as typed, time of day, which showroom).

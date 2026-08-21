@@ -9,8 +9,9 @@
  *   - HubSpot error bodies truncated to 300 chars in thrown messages
  *
  * Deliberate omissions, matching the rest of the org:
- *   - no lifecyclestage write (nothing in the org writes it; it would silently
- *     drag showroom walk-ins backwards through the funnel)
+ *   - no lifecyclestage write (nothing in the org writes it, and existing
+ *     showroom visitors sit across many stages, so stamping one would drag
+ *     live opportunities backwards through the funnel)
  *   - no Company object write (no /crm/v3/objects/companies write exists in the
  *     org) - the visitor's employer goes on the contact's `company` property
  *   - associations use the /crm/v4 "default" endpoint rather than a hardcoded
@@ -19,6 +20,21 @@
 
 var HS_BASE = 'https://api.hubapi.com';
 var HS_PORTAL_ID = '44093193';
+
+/**
+ * Existing custom contact properties for showroom tracking. Both already exist
+ * in the portal and ~115 contacts already use them, so this writes the same
+ * shape rather than inventing new fields:
+ *
+ *   showroom_visit  enumeration, options are exactly 'Yes' / 'No'
+ *   showroom        date, format yyyy-MM-dd
+ *
+ * These two are always written, even on an existing contact. That is the whole
+ * point of the integration and it is what gives Kat a filterable list rather
+ * than just timeline history.
+ */
+var HS_SHOWROOM_FLAG = 'showroom_visit';
+var HS_SHOWROOM_DATE = 'showroom';
 
 function hubspotToken() {
   return PropertiesService.getScriptProperties().getProperty('HUBSPOT_TOKEN');
@@ -39,16 +55,18 @@ function pushToHubSpot(visitor) {
   var created = false;
 
   if (contact) {
-    fillContactBlanks(contact, visitor, token);
+    updateContact(contact, visitor, token);
   } else {
-    contact = createContact(visitor, token);
-    created = true;
+    var result = createContact(visitor, token);
+    contact = result.contact;
+    created = result.created;
   }
 
   addVisitNote(contact.id, visitor, token);
 
   return (created ? 'contact created' : 'contact updated') +
-         ' (' + contact.id + '), visit note added';
+         ' (' + contact.id + '), ' + HS_SHOWROOM_FLAG + '=Yes, ' +
+         HS_SHOWROOM_DATE + '=' + visitDate(visitor) + ', visit note added';
 }
 
 // ------------------------------------------------------------------ contacts
@@ -68,48 +86,78 @@ function findContactByEmail(email, token) {
   return (res && res.results && res.results.length) ? res.results[0] : null;
 }
 
+/** Visit date in the format HubSpot date properties expect. */
+function visitDate(visitor) {
+  return Utilities.formatDate(visitor.when, CONFIG.TIMEZONE, 'yyyy-MM-dd');
+}
+
+/**
+ * Creates the contact. Returns { contact, created } because the 409 path
+ * recovers an existing record rather than creating one, and the caller's log
+ * line should say which actually happened.
+ */
 function createContact(visitor, token) {
   var parts = splitName(visitor.name);
+  var properties = {
+    email:     visitor.email,
+    firstname: parts.first,
+    lastname:  parts.last,
+    company:   visitor.company
+  };
+
+  properties[HS_SHOWROOM_FLAG] = 'Yes';
+  properties[HS_SHOWROOM_DATE] = visitDate(visitor);
 
   try {
-    return hsFetch('/crm/v3/objects/contacts', token, {
-      method: 'post',
-      payload: {
-        properties: {
-          email:     visitor.email,
-          firstname: parts.first,
-          lastname:  parts.last,
-          company:   visitor.company
-        }
-      }
-    });
+    return {
+      contact: hsFetch('/crm/v3/objects/contacts', token, {
+        method: 'post',
+        payload: { properties: properties }
+      }),
+      created: true
+    };
   } catch (err) {
     // 409 == a contact with this email already exists (race, or the search
-    // index hadn't caught up). Re-search and reuse it.
+    // index hadn't caught up). Re-search, then treat it as the update path so
+    // the showroom properties still land.
     if (String(err).indexOf('409') !== -1) {
       var existing = findContactByEmail(visitor.email, token);
-      if (existing) return existing;
+      if (existing) {
+        updateContact(existing, visitor, token);
+        return { contact: existing, created: false };
+      }
     }
     throw err;
   }
 }
 
 /**
- * Only fills properties that are currently empty. We never overwrite a name or
- * company that sales has already curated just because someone typed something
- * different into a kiosk - same conservatism as loblaws-request-form, which
- * deliberately never overwrites an existing contact's phone.
+ * Updates an existing contact.
+ *
+ * Two different rules apply here on purpose:
+ *
+ *   - showroom_visit / showroom are ALWAYS written. Recording the visit is the
+ *     job, and `showroom` carries the most recent visit date.
+ *   - firstname / lastname / company are only filled when currently blank. A
+ *     kiosk typo must never overwrite a name or company that sales has already
+ *     curated. Same conservatism as loblaws-request-form, which deliberately
+ *     never overwrites an existing contact's phone.
+ *
+ * lifecyclestage is deliberately untouched: the 115 contacts already carrying
+ * showroom_visit sit across many different stages, so stamping one here would
+ * drag live opportunities backwards through the funnel.
  */
-function fillContactBlanks(contact, visitor, token) {
+function updateContact(contact, visitor, token) {
   var current = contact.properties || {};
   var parts = splitName(visitor.name);
   var patch = {};
 
-  if (!current.firstname && parts.first) patch.firstname = parts.first;
-  if (!current.lastname  && parts.last)  patch.lastname  = parts.last;
-  if (!current.company   && visitor.company) patch.company = visitor.company;
+  patch[HS_SHOWROOM_FLAG] = 'Yes';
+  patch[HS_SHOWROOM_DATE] = visitDate(visitor);
 
-  if (!Object.keys(patch).length) return;
+  if (!current.firstname && parts.first)     patch.firstname = parts.first;
+  if (!current.lastname  && parts.last)      patch.lastname  = parts.last;
+  if (!current.company   && visitor.company) patch.company   = visitor.company;
 
   hsFetch('/crm/v3/objects/contacts/' + contact.id, token, {
     method: 'patch',
@@ -120,9 +168,9 @@ function fillContactBlanks(contact, visitor, token) {
 // ------------------------------------------------------------------ note
 
 /**
- * A timeline note is how the showroom visit becomes visible in HubSpot without
- * needing any custom property created first. If you later add a custom date
- * property for "last showroom visit", patch it here too.
+ * The two showroom properties make the visit filterable; this note carries the
+ * detail they cannot hold - company exactly as the visitor typed it, the time
+ * of day, and which showroom. Together they give both a list and a history.
  */
 function addVisitNote(contactId, visitor, token) {
   var when = Utilities.formatDate(visitor.when, CONFIG.TIMEZONE, 'EEEE d MMMM yyyy, HH:mm');
