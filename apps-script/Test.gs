@@ -52,16 +52,39 @@ function testSignIn() {
  * HubSpot or the calendar. Use this when iterating on copy or layout.
  */
 function testEmailOnly() {
-  var me = whoAmI();
+  sendTestEmailTo(whoAmI());
+}
+
+/**
+ * Same as testEmailOnly but to a colleague, so they can see the real thing
+ * from the real sender. Edit the address, select this function, press Run.
+ *
+ * Run it from whichever account should be the sender: if the script is owned
+ * by showroom.uk@withbureau.com this goes out natively from that address with
+ * no alias setup at all.
+ */
+function testEmailToKat() {
+  sendTestEmailTo('kathryn@withbureau.com');
+}
+
+function sendTestEmailTo(address) {
+  if (!address || !isValidEmail(address)) {
+    throw new Error('sendTestEmailTo needs a valid email address, got: ' + address);
+  }
+
+  var first = address.split('@')[0].split(/[._-]/)[0];
+  var name = first.charAt(0).toUpperCase() + first.slice(1) + ' (test)';
 
   sendVisitorEmail({
-    name: 'Priya Raman',
-    company: 'Fletcher & Co',
-    email: me,
+    name: name,
+    company: 'Bureau',
+    email: address,
     when: new Date()
   });
 
-  console.log('Preview thank-you email sent to ' + me);
+  console.log('Test thank-you sent to ' + address +
+              (CONFIG.FROM_ALIAS ? ' as ' + CONFIG.FROM_ALIAS : ' from the owner account') +
+              '. If the Executions log shows "could not send as", the alias is not verified yet.');
 }
 
 /**
