@@ -6,8 +6,8 @@ repo root). It fires `name` / `company` / `email` at a Google Apps Script web
 app, which is the code in this folder.
 
 Apps Script rather than a Worker on purpose: `MailApp` sends as whichever Google
-account owns the script, so "send from Nathan now, `londonshowroom@` later" is a
-config change, not a domain-verification project. The trade-off is that the
+account owns the script, so switching the sender to `showroom.uk@withbureau.com`
+is a config change, not a domain-verification project. The trade-off is that the
 `.gs` source is not deployed from this repo - see *Deploying* below.
 
 ## What a sign-in does
@@ -98,23 +98,52 @@ Captures what `sendVisitorEmail` hands to `MailApp` and writes the rendered HTML
 next to itself so you can open it in a browser. Prints the subject, sender,
 reply-to and the plain-text alternative.
 
-## Switching the sender to londonshowroom@withbureau.com
+## The sender: showroom.uk@withbureau.com
+
+`showroom.uk@withbureau.com` exists as of 14 Sep 2026. It is a full Workspace
+mailbox with its own seat, not a group alias, so either wiring below works.
+`CONFIG.FROM_ALIAS` is already set to it.
 
 Kat's preference (and yours) was a separate showroom address rather than
-routing this through sales. When it exists:
+routing this through sales, so this is that.
 
-1. Create the mailbox / Google group alias.
-2. On the account that owns this script: Gmail → Settings → Accounts and Import
-   → *Send mail as* → Add another email address → verify it.
-3. Set `CONFIG.FROM_ALIAS = 'londonshowroom@withbureau.com'`.
-4. Redeploy.
+### Option A: keep the script on Nathan's account, send *as* the showroom
 
-`FROM_NAME` and `REPLY_TO` are separate knobs - `REPLY_TO` currently points at
-Kat so visitor replies land with a human, not in a shared inbox nobody watches.
+The quickest path and what the config is currently set up for.
 
-Alternative, if you'd rather the mailbox owned the automation outright: move the
-script and sheet into that account's Drive and leave `FROM_ALIAS` empty. More
-correct long-term, more faff now.
+1. In Gmail as nathan@withbureau.com: Settings → Accounts and Import →
+   *Send mail as* → Add another email address.
+2. Enter `showroom.uk@withbureau.com`, leave "Treat as an alias" ticked.
+3. Gmail sends a verification code to the showroom.uk inbox. Open that inbox
+   and paste the code back.
+4. Redeploy the script.
+
+Until step 3 is complete, `MailApp` refuses the `from` address. `Email.gs`
+catches that, logs an error, and sends from the owner account instead, so
+visitors still get their thank-you while the alias is pending. Check the
+Executions log after the first real sign-in: if you see "could not send as
+showroom.uk@withbureau.com", the alias isn't verified yet.
+
+### Option B: move the script to the showroom account
+
+Cleaner long-term. The showroom mailbox owns the automation, so it doesn't
+break if Nathan's account is ever suspended or leaves, and there's no alias to
+maintain.
+
+1. Sign in as showroom.uk@withbureau.com.
+2. Either transfer ownership of the existing sheet + bound script to it, or
+   create a fresh sheet in its Drive and paste the `.gs` files in.
+3. Set `CONFIG.FROM_ALIAS = ''` so it sends natively.
+4. Add the `HUBSPOT_TOKEN` script property again on the new project. Script
+   properties do not move with ownership transfers.
+5. Deploy from that account. **The `/exec` URL will change**, so update
+   `SCRIPT_URL` in `index.html` and redeploy the Worker.
+
+### Reply-to
+
+`REPLY_TO` is a separate knob and still points at Kat, so visitor replies land
+with a human. Only point it at showroom.uk@ once someone is actually watching
+that inbox, otherwise replies vanish into a mailbox nobody opens.
 
 ## The calendar question
 

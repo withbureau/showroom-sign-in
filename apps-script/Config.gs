@@ -16,16 +16,22 @@ var CONFIG = {
   SHOWROOM_ADDRESS: '3 Albemarle Way, London EC1V 4JB',
 
   // ---------------------------------------------------------------- sender
-  // FROM_ALIAS: '' means "send as whichever Google account owns this script".
-  // Right now that is nathan@withbureau.com, which is what we want for now.
+  // showroom.uk@withbureau.com is a full Workspace mailbox Parker set up on
+  // 14 Sep 2026. Two ways to send as it, pick one (see SETUP.md):
   //
-  // When londonshowroom@withbureau.com (or similar) exists:
-  //   1. Add it to the owning account as a Gmail "Send mail as" alias
-  //      (Gmail → Settings → Accounts → Send mail as → Add another email address)
-  //   2. Verify it, then put the address in FROM_ALIAS below.
-  // That is the only change needed - no code edits.
-  FROM_ALIAS: '',
+  //   A) Script stays owned by nathan@withbureau.com and sends AS the
+  //      showroom address. Needs showroom.uk@ added and verified as a Gmail
+  //      "Send mail as" alias on Nathan's account first. If that hasn't been
+  //      done yet, Email.gs logs the failure and falls back to sending from
+  //      the owner, so visitors still get their thank-you.
+  //
+  //   B) Script and sheet are owned by showroom.uk@ itself. Then set this to
+  //      '' and it sends natively, no alias needed. Cleaner long-term.
+  FROM_ALIAS: 'showroom.uk@withbureau.com',
   FROM_NAME: 'Bureau London Showroom',
+
+  // Replies go to a human. Change to showroom.uk@withbureau.com only once
+  // someone is actually watching that inbox.
   REPLY_TO: 'kathryn@withbureau.com',
 
   // ---------------------------------------------------------------- visitor email

@@ -33,16 +33,26 @@ function sendVisitorEmail(visitor) {
     replyTo:  CONFIG.REPLY_TO
   };
 
-  // '' = send as the account that owns the script. Set FROM_ALIAS once
-  // londonshowroom@withbureau.com exists as a verified Gmail alias.
+  // '' = send as the account that owns the script.
   if (CONFIG.FROM_ALIAS) options.from = CONFIG.FROM_ALIAS;
 
-  MailApp.sendEmail(
-    visitor.email,
-    subject,
-    visitorEmailText(visitor),   // plain-text alternative
-    options
-  );
+  var text = visitorEmailText(visitor);   // plain-text alternative
+
+  try {
+    MailApp.sendEmail(visitor.email, subject, text, options);
+  } catch (err) {
+    // MailApp refuses a `from` that isn't a verified "Send mail as" alias on
+    // the owning account. That is the single most likely misconfiguration, and
+    // a thank-you from the owner beats no thank-you at all, so retry without
+    // the alias. Logged as an error so it gets noticed and fixed, not ignored.
+    if (!options.from) throw err;
+
+    console.error('[showroom] could not send as ' + options.from + ' (' + err +
+                  '). Sending from the owner account instead. Is ' + options.from +
+                  ' a verified Send-mail-as alias?');
+    delete options.from;
+    MailApp.sendEmail(visitor.email, subject, text, options);
+  }
 }
 
 // ------------------------------------------------------------------ html

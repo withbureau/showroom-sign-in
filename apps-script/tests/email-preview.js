@@ -5,7 +5,7 @@ const dir = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(dir, f), 'utf8');
 
 // Load the REAL source files so the preview cannot drift from what actually sends.
-// Code.gs is loaded for firstName()/esc() — nothing in it executes at load time.
+// Code.gs is loaded for firstName()/esc(). Nothing in it executes at load time.
 const src = read('Config.gs') + '\n' + read('Code.gs') + '\n' + read('Email.gs');
 
 // Faithful-enough stand-in for Utilities.formatDate so the preview shows the
@@ -72,3 +72,35 @@ console.log('REPLY-TO:  ' + out.replyTo);
 console.log('html bytes: ' + out.html.length);
 console.log('written: ' + outPath);
 console.log('\n--- PLAIN TEXT ---\n' + out.text);
+
+// ---------------------------------------------------------------- alias fallback
+// If FROM_ALIAS isn't a verified Send-mail-as alias yet, MailApp throws. The
+// email must still go out, from the owner, with a loud log line.
+{
+  const assert = require('assert');
+  const sends = [];
+  const errors = [];
+
+  const fallback = new Function('visitor', 'formatDate', 'sends', 'errors', `
+    var MailApp = { sendEmail: function (to, subject, body, options) {
+      sends.push(JSON.parse(JSON.stringify(options)));
+      if (options.from) throw new Error('Invalid argument: from');
+    } };
+    var Utilities = { formatDate: formatDate };
+    var console = { error: function (m) { errors.push(m); }, log: function () {}, warn: function () {} };
+    ${src}
+    sendVisitorEmail(visitor);
+    return CONFIG.FROM_ALIAS;
+  `);
+
+  const alias = fallback(visitor, formatDate, sends, errors);
+
+  assert.strictEqual(sends.length, 2, 'expected one failed send then one retry');
+  assert.strictEqual(sends[0].from, alias, 'first attempt should use the alias');
+  assert.ok(!('from' in sends[1]), 'retry must drop the alias');
+  assert.strictEqual(sends[1].replyTo, sends[0].replyTo, 'reply-to must survive the retry');
+  assert.strictEqual(errors.length, 1, 'fallback must log exactly one error');
+  assert.ok(errors[0].includes(alias), 'error must name the alias that failed');
+
+  console.log('\nALIAS FALLBACK: PASS (unverified ' + alias + ' -> retried from owner, 1 error logged)');
+}
