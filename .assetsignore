@@ -1,0 +1,7 @@
+# Static assets = the kiosk only. Nothing else in this repo should be served.
+apps-script/
+.git/
+.gitignore
+.assetsignore
+wrangler.toml
+.claude/
